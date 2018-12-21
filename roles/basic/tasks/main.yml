@@ -15,13 +15,13 @@
     var: msg.json
 
 
-- name: "Create Protection Domain PD1"
+- name: "Query Protection Domain pd1"
   uri:
     url: https://10.237.198.170/api/types/ProtectionDomain/instances
-    method: POST
+    method: GET
     user: admin
     password: "{{ msg.json }}"
-    body: {"name":"PD1"}
+    return_content: yes
     force_basic_auth: yes
     body_format: json
     validate_certs: False
@@ -33,25 +33,8 @@
   ignore_errors: yes
 
 - debug:
-    var: protection_domain_id.json.id
+    var: protection_domain_id.json[0].id
 
-
-- name: "Create Storage Pool SP1"
-  uri:
-    url: https://10.237.198.170/api/types/StoragePool/instances
-    method: POST
-    user: admin
-    password: "{{ msg.json }}"
-    body: {"protectionDomainId":"{{ protection_domain_id.json.id }}","name":"SP1"}
-    force_basic_auth: yes
-    body_format: json
-    validate_certs: False
-    status_code:
-      - 200
-      - 201
-      - 202
-    ignore_errors: yes
-  register: storage_pool
 
 - name: "Add SDS Server to Storage Pool SP1"
   uri:
@@ -59,7 +42,7 @@
     method: POST
     user: admin
     password: "{{ msg.json }}"
-    body: {"protectionDomainId": "{{ protection_domain_id.json.id }}", "sdsIpList": [{"SdsIp": {"ip": "192.168.10.203", "role": "all"}}],"name": "terraform-SIOSVM3"}
+    body: {"protectionDomainId": "{{ protection_domain_id.json[0].id }}", "sdsIpList": [{"SdsIp": {"ip": "192.168.10.203", "role": "all"}}],"name": "terraform-SIOSVM3"}
     force_basic_auth: yes
     body_format: json
     validate_certs: False
