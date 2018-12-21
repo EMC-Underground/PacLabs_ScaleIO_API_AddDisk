@@ -35,14 +35,44 @@
 - debug:
     var: protection_domain_id.json[0].id
 
+- name: "Query MDM Cluster to get Ids"
+  uri:
+    url: https://10.237.198.170/api/instances/System/queryMdmCluster
+    return_content: yes
+    method: POST
+    body: {}
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  register: output
 
-- name: "Add SDS Server to Storage Pool SP1"
+- debug:
+    var: output.json.master.ips[0]
+
+- debug:
+    var: output.json.master.name
+
+- debug:
+    var: output.json.master.ips[1]
+
+- debug:
+    var: output.json.slaves[0].ips[0]
+
+- debug:
+    var: output.json.master
+
+
+
+- name: "Add SDS Master Server to Storage Pool SP1"
   uri:
     url: https://10.237.198.170/api/types/Sds/instances 
     method: POST
     user: admin
     password: "{{ msg.json }}"
-    body: {"protectionDomainId": "{{ protection_domain_id.json[0].id }}", "sdsIpList": [{"SdsIp": {"ip": "192.168.10.203", "role": "all"}}],"name": "terraform-SIOSVM3"}
+    body: {"protectionDomainId": "{{ protection_domain_id.json[0].id }}", "sdsIpList": [{"SdsIp": {"ip": "{{ output.json.master.ips[0] }}", "role": "all"}}],"name": "{{ output.json.master.name }}"}
     force_basic_auth: yes
     body_format: json
     validate_certs: False
@@ -50,4 +80,40 @@
       - 200
       - 201
       - 202
-    ignore_errors: yes
+  ignore_errors: yes
+
+
+- name: "Add SDS Slave Server to Storage Pool SP1"
+  uri:
+    url: https://10.237.198.170/api/types/Sds/instances 
+    method: POST
+    user: admin
+    password: "{{ msg.json }}"
+    body: {"protectionDomainId": "{{ protection_domain_id.json[0].id }}", "sdsIpList": [{"SdsIp": {"ip": "{{ output.json.slaves[0].ips[0] }}", "role": "all"}}],"name": "{{ output.json.slaves[0].name }}"}
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  ignore_errors: yes
+
+
+- name: "Add SDS Tiebreaker Server to Storage Pool SP1"
+  uri:
+    url: https://10.237.198.170/api/types/Sds/instances 
+    method: POST
+    user: admin
+    password: "{{ msg.json }}"
+    body: {"protectionDomainId": "{{ protection_domain_id.json[0].id }}", "sdsIpList": [{"SdsIp": {"ip": "{{ output.json.tieBreakers[0].ips[0] }}", "role": "all"}}],"name": "{{ output.json.tieBreakers[0].name }}"}
+    force_basic_auth: yes
+    body_format: json
+    validate_certs: False
+    status_code:
+      - 200
+      - 201
+      - 202
+  ignore_errors: yes
+
+
